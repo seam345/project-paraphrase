@@ -17,6 +17,7 @@ import com.android.volley.toolbox.Volley;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -63,13 +64,18 @@ public class MainActivity extends AppCompatActivity
                         Document doc = Jsoup.parse(response);
                         webView.loadDataWithBaseURL(url, doc.toString(), null, null, null);
                         Element el = doc.select("div[itemprop=articleBody]").first();
+                        Elements code = doc.select("div.highlight>pre");
+                        // el.select()
+                        Elements nonCode = el.select("p,h1,h2,h3");
                         Log.v(TAG, String.format("%d (MainActivity.java:67)", MainActivity.status));
                         
+                        String blah = nonCode.text();//.substring(0,erm.getMaxSpeechInputLength()-1);
+                        Log.v(TAG, String.format("%s (MainActivity.java:76)", blah));
                         if (MainActivity.status == TextToSpeech.SUCCESS)
                         {
-                            // erm.speak("arrrrrrrrrrr", TextToSpeech.QUEUE_ADD, null, null);
-                            String blah = el.text().substring(0,erm.getMaxSpeechInputLength()-1);
-                            erm.speak(blah, TextToSpeech.QUEUE_ADD, null, null);
+                            // String blah2 = el.text().substring(erm.getMaxSpeechInputLength());
+                            erm.speak(blah, TextToSpeech.QUEUE_FLUSH, null, null);
+                            // erm.speak(blah2, TextToSpeech.QUEUE_ADD, null, null);
                         }else{
                             Log.e(TAG, "onResponse: opps");
                         }
