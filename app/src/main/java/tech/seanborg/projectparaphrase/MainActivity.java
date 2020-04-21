@@ -14,10 +14,16 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 public class MainActivity extends AppCompatActivity
 {
     public static String TAG = "projectparaphrase";
     TextToSpeech erm = null;
+    String textOnPage = "";
+    static int status = TextToSpeech.ERROR;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -25,12 +31,13 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        TextToSpeech.OnInitListener test = new TextToSpeech.OnInitListener()
+        final TextToSpeech.OnInitListener test = new TextToSpeech.OnInitListener()
         {
             @Override
             public void onInit(int status)
             {
-                erm.speak("testing text to speech", TextToSpeech.QUEUE_ADD, null, null);
+                MainActivity.status = status;
+                // erm.speak(textOnPage, TextToSpeech.QUEUE_ADD, null, null);
                 
             }
         };
@@ -38,18 +45,10 @@ public class MainActivity extends AppCompatActivity
         erm = new TextToSpeech(getApplicationContext(), test);
         
         final WebView webView = findViewById(R.id.webView);
-        // webView.loadData(
-        //         "<html>\n" +
-        //         "<header><title>This is title</title></header>\n" +
-        //         "<body>\n" +
-        //         "Hello world\n" +
-        //         "</body>\n" +
-        //         "</html>",null, null
-        // );
         
         
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://buildstream.gitlab.io/buildstream/tutorial/first-project.html";
+        final String url = "https://buildstream.gitlab.io/buildstream/tutorial/first-project.html";
         
         webView.loadUrl(url);
 // Request a string response from the provided URL.
@@ -61,7 +60,19 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Display the first 500 characters of the response string.
                         // webView.loadData(response, null, null);
-                        // Log.v(TAG, String.format("%s (MainActivity.java:45)", response));
+                        Document doc = Jsoup.parse(response);
+                        webView.loadDataWithBaseURL(url, doc.toString(), null, null, null);
+                        Element el = doc.select("div[itemprop=articleBody]").first();
+                        Log.v(TAG, String.format("%d (MainActivity.java:67)", MainActivity.status));
+                        
+                        if (MainActivity.status == TextToSpeech.SUCCESS)
+                        {
+                            // erm.speak("arrrrrrrrrrr", TextToSpeech.QUEUE_ADD, null, null);
+                            String blah = el.text().substring(0,erm.getMaxSpeechInputLength()-1);
+                            erm.speak(blah, TextToSpeech.QUEUE_ADD, null, null);
+                        }else{
+                            Log.e(TAG, "onResponse: opps");
+                        }
                     }
                 }, new Response.ErrorListener()
         {
