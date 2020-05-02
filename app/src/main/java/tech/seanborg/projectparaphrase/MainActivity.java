@@ -2,10 +2,18 @@ package tech.seanborg.projectparaphrase;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
 import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -17,7 +25,10 @@ import com.android.volley.toolbox.Volley;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -25,60 +36,76 @@ public class MainActivity extends AppCompatActivity
     TextToSpeech erm = null;
     String textOnPage = "";
     static int status = TextToSpeech.ERROR;
+    String html = "";
+    String url = "https://buildstream.gitlab.io/buildstream/tutorial/first-project.html";
+    HtmlConverter htmlConverter = null;
+    HtmlConverterToSpeech htmlConverterToSpeech = null;
+    
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        htmlConverter = new HtmlConverter();
         
-        final TextToSpeech.OnInitListener test = new TextToSpeech.OnInitListener()
-        {
-            @Override
-            public void onInit(int status)
-            {
-                MainActivity.status = status;
-                // erm.speak(textOnPage, TextToSpeech.QUEUE_ADD, null, null);
-                
-            }
-        };
-        
-        erm = new TextToSpeech(getApplicationContext(), test);
+        htmlConverterToSpeech = new HtmlConverterToSpeech(htmlConverter, getApplicationContext(), url);
         
         final WebView webView = findViewById(R.id.webView);
         
         
-        RequestQueue queue = Volley.newRequestQueue(this);
-        final String url = "https://buildstream.gitlab.io/buildstream/tutorial/first-project.html";
+        EditText urlEditText = (EditText) findViewById(R.id.editTextUrl);
+        urlEditText.setText(url);
+        urlEditText.setOnEditorActionListener(new TextView.OnEditorActionListener()
+        {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+            {
+                // todo url needs http so I should add it if it doesn't exist
+                url = v.getText().toString();
+                loadWebView(url, webView, null);
+                startLoadWebpage(getApplicationContext(), url, webView, htmlConverter, htmlConverterToSpeech);
+                return false;
+            }
+        });
+    
+    
+        Button playPauseButton = (Button) findViewById(R.id.buttonPlayPause);
+        playPauseButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                htmlConverterToSpeech.playPause(getApplicationContext());
+            }
+        });
         
-        webView.loadUrl(url);
-// Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+       
+        
+        
+        // loadWebView(url, webView, null);
+        Log.d(TAG, String.format("started load weboage (MainActivity.java:87)"));
+        startLoadWebpage(getApplicationContext(), url, webView, htmlConverter, htmlConverterToSpeech);
+
+        
+    }
+
+    
+    static void startLoadWebpage(Context context, final String urlToLoad, final WebView webView, final HtmlConverter htmlConverter, final HtmlConverterToSpeech htmlConverterToSpeech)
+    {
+        RequestQueue queue = Volley.newRequestQueue(context);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlToLoad,
                 new Response.Listener<String>()
                 {
                     @Override
                     public void onResponse(String response)
                     {
-                        // Display the first 500 characters of the response string.
-                        // webView.loadData(response, null, null);
-                        Document doc = Jsoup.parse(response);
-                        webView.loadDataWithBaseURL(url, doc.toString(), null, null, null);
-                        Element el = doc.select("div[itemprop=articleBody]").first();
-                        Elements code = doc.select("div.highlight>pre");
-                        // el.select()
-                        Elements nonCode = el.select("p,h1,h2,h3");
-                        Log.v(TAG, String.format("%d (MainActivity.java:67)", MainActivity.status));
-                        
-                        String blah = nonCode.text();//.substring(0,erm.getMaxSpeechInputLength()-1);
-                        Log.v(TAG, String.format("%s (MainActivity.java:76)", blah));
-                        if (MainActivity.status == TextToSpeech.SUCCESS)
-                        {
-                            // String blah2 = el.text().substring(erm.getMaxSpeechInputLength());
-                            erm.speak(blah, TextToSpeech.QUEUE_FLUSH, null, null);
-                            // erm.speak(blah2, TextToSpeech.QUEUE_ADD, null, null);
-                        }else{
-                            Log.e(TAG, "onResponse: opps");
-                        }
+                        htmlConverter.convert(response);
+                        Log.v(TAG, String.format("finished convert (MainActivity.java:103)"));
+                       loadWebView(urlToLoad, webView, null);
+                       htmlConverterToSpeech.prepare();
+                        Log.v(TAG, String.format("Called prepare! (MainActivity.java:105)"));
+                       
                     }
                 }, new Response.ErrorListener()
         {
@@ -91,5 +118,24 @@ public class MainActivity extends AppCompatActivity
 
 // Add the request to the RequestQueue.
         queue.add(stringRequest);
+    }
+    
+    static void loadWebView(String baseUrl, WebView window, Document htmlJsoup)
+    {
+        if (htmlJsoup == null)
+        {
+            window.loadUrl(baseUrl);
+        } else
+        {
+            window.loadDataWithBaseURL(baseUrl, htmlJsoup.toString(), null, null, null);
+        }
+    }
+    
+    static String codeFilter(Element element)
+    {
+        String codeText = element.text();
+        
+        codeText.replaceAll("\\.", " dot ");
+        return codeText;
     }
 }
