@@ -1,19 +1,19 @@
 package tech.seanborg.projectparaphrase;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -22,13 +22,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
-import org.jsoup.select.Elements;
-
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -52,6 +47,18 @@ public class MainActivity extends AppCompatActivity
         htmlConverterToSpeech = new HtmlConverterToSpeech(htmlConverter, getApplicationContext(), url);
         
         final WebView webView = findViewById(R.id.webView);
+        WebViewClient webViewClient = new WebViewClient()
+        {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request)
+            {
+                loadWebView(request.getUrl().toString(), webView, null);
+                startLoadWebpage(getApplicationContext(), request.getUrl().toString(), webView, htmlConverter, htmlConverterToSpeech);
+                return true;
+            }
+            
+        };
+        webView.setWebViewClient(webViewClient);
         
         
         EditText urlEditText = (EditText) findViewById(R.id.editTextUrl);
@@ -68,8 +75,8 @@ public class MainActivity extends AppCompatActivity
                 return false;
             }
         });
-    
-    
+        
+        
         Button playPauseButton = (Button) findViewById(R.id.buttonPlayPause);
         playPauseButton.setOnClickListener(new View.OnClickListener()
         {
@@ -80,16 +87,14 @@ public class MainActivity extends AppCompatActivity
             }
         });
         
-       
-        
         
         // loadWebView(url, webView, null);
         Log.d(TAG, String.format("started load weboage (MainActivity.java:87)"));
         startLoadWebpage(getApplicationContext(), url, webView, htmlConverter, htmlConverterToSpeech);
-
+        
         
     }
-
+    
     
     static void startLoadWebpage(Context context, final String urlToLoad, final WebView webView, final HtmlConverter htmlConverter, final HtmlConverterToSpeech htmlConverterToSpeech)
     {
@@ -102,10 +107,10 @@ public class MainActivity extends AppCompatActivity
                     {
                         htmlConverter.convert(response);
                         Log.v(TAG, String.format("finished convert (MainActivity.java:103)"));
-                       loadWebView(urlToLoad, webView, null);
-                       htmlConverterToSpeech.prepare();
+                        loadWebView(urlToLoad, webView, null);
+                        htmlConverterToSpeech.prepare();
                         Log.v(TAG, String.format("Called prepare! (MainActivity.java:105)"));
-                       
+                        
                     }
                 }, new Response.ErrorListener()
         {
