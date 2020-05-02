@@ -32,6 +32,7 @@ public class HtmlConverterToSpeech
     File cacheDir = null;
     MediaPlayer player = null;
     UtteranceProgressListener listener = null;
+    double lastConvertTag = 0;
     
     public HtmlConverterToSpeech(final HtmlConverter htmlConverter, final Context context, String url)
     {
@@ -89,8 +90,11 @@ public class HtmlConverterToSpeech
     public void prepare()
     {
         Log.v(TAG, String.format("called prepare (HtmlConverterToSpeech.java:58)"));
-        if (!ready)
+        Log.v(TAG, String.format("lastCovertTag %f, currentTag %f (HtmlConverterToSpeech.java:93)", lastConvertTag, htmlConverter.currentConvertTag()));
+        if (!ready || lastConvertTag != htmlConverter.currentConvertTag())
         {
+            readyFiles.clear();
+            lastConvertTag = htmlConverter.currentConvertTag();
             File topDir = new File(cacheDir.getPath() + "/" + url);
             files = new ArrayList(htmlConverter.paragraphs.length);
             Log.v(TAG, String.format("paragraphs size %d, files array initialize %d (HtmlConverterToSpeech.java:63)", htmlConverter.paragraphs.length, files.size()));
@@ -128,6 +132,8 @@ public class HtmlConverterToSpeech
             cacheDir.getPath();
         }
         ready = true;
+        pause = false;
+        player.stop();
     }
     
     public boolean playPause(Context context)

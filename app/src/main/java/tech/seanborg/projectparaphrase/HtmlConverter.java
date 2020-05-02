@@ -17,8 +17,11 @@ public class HtmlConverter
 {
     private String rawHTML = "";
     Paragraph[] paragraphs = null;
+    double convertTag = 0;
     
-    
+    public double currentConvertTag(){
+        return convertTag;
+    }
     static String codeFilter(Element element)
     {
         String codeText = element.text();
@@ -29,6 +32,7 @@ public class HtmlConverter
     
     public void convert(String rawHTML)
     {
+        convertTag = Math.random(); // quicker than hashing the string, I just need to know if I have regenerated the text or not
         Log.v(TAG, String.format("startdConvert (HtmlConverter.java:32)"));
         Document doc = Jsoup.parse(rawHTML);
         Element el = doc.select("div[itemprop=articleBody]").first();
