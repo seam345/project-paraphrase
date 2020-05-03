@@ -1,5 +1,6 @@
 package tech.seanborg.projectparaphrase;
 
+import android.accessibilityservice.FingerprintGestureController;
 import android.content.Context;
 import android.media.MediaDataSource;
 import android.media.MediaPlayer;
@@ -33,6 +34,8 @@ public class HtmlConverterToSpeech
     MediaPlayer player = null;
     UtteranceProgressListener listener = null;
     double lastConvertTag = 0;
+    int paragraph = 0;
+    int sentence = 0;
     
     public HtmlConverterToSpeech(final HtmlConverter htmlConverter, final Context context, String url)
     {
@@ -68,6 +71,10 @@ public class HtmlConverterToSpeech
             public void onDone(String utteranceId)
             {
                 Log.v(TAG, String.format("utterence id = %s (HtmlConverterToSpeech.java:62)", utteranceId));
+                String[] positionString = utteranceId.split("_");
+                int paragraph = Integer.parseInt(positionString[0]);
+                int sentence = Integer.parseInt(positionString[1]);
+                htmlConverter.paragraphs[paragraph].sentences[sentence].speechReady = true;
             }
             
             @Override
@@ -109,6 +116,7 @@ public class HtmlConverterToSpeech
                 for (int j = 0; j < htmlConverter.paragraphs[i].sentences.length; j++)
                 {
                     File sentenceFile = new File(topDir.getPath() + "/" + Integer.toString(i) + "/" + Integer.toString(j) + ".wav");
+                    htmlConverter.paragraphs[i].sentences[j].setSynthesizedSpeech(sentenceFile);
                     if (!sentenceFile.exists())
                     {
                         Log.v(TAG, String.format("File didnt exist %s (HtmlConverterToSpeech.java:71)", sentenceFile.getAbsolutePath()));
@@ -121,7 +129,7 @@ public class HtmlConverterToSpeech
                         }
                     }
                     String urrerenceID = String.format("%03d_%03d", i, j);
-                    t2s.synthesizeToFile(htmlConverter.paragraphs[i].sentences[j], null, sentenceFile, urrerenceID);
+                    t2s.synthesizeToFile(htmlConverter.paragraphs[i].sentences[j].synthesizedText, null, sentenceFile, urrerenceID);
                     readyFiles.add(sentenceFile);
                     tempParagraph.add(sentenceFile);
                 }
@@ -142,27 +150,42 @@ public class HtmlConverterToSpeech
         {
             player.pause();
             pause = true;
-        }
-        else if (pause)
+        } else if (pause)
         {
             player.start();
-        }else
+        } else
         {
-            play();
+            play(0, 0);
         }
         
-       
+        
         return player.isPlaying();
     }
     
-    void play()
+    void play(int paragraph, int sentence)
     {
-        if (readyFiles.size() > 0)
+        try
         {
-            try
+            player.reset();
+            if (htmlConverter.paragraphs.length < paragraph)
             {
-                player.reset();
-                player.setDataSource(readyFiles.poll().getPath());
+                Log.e(TAG, "play: paragraph was higher than number of paragraphs");
+                return;
+            }
+            while (htmlConverter.paragraphs[paragraph].sentences.length < sentence)
+            {
+                sentence -= htmlConverter.paragraphs[paragraph].sentences.length;
+                paragraph++;
+                if (htmlConverter.paragraphs.length < paragraph)
+                {
+                    Log.e(TAG, "play: sentence was higher than number of sentences then paragraph was higher than number of paragraphs");
+                    return;
+                }
+            }
+            if (htmlConverter.paragraphs[paragraph].sentences[sentence].speechReady)
+            {
+                
+                player.setDataSource(htmlConverter.paragraphs[paragraph].sentences[sentence].getSynthesizedSpeech().getPath());
                 player.prepare();
                 player.start();
                 player.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
@@ -170,13 +193,69 @@ public class HtmlConverterToSpeech
                     @Override
                     public void onCompletion(MediaPlayer mp)
                     {
-                        play();
+                        playNext();
                     }
                 });
-            } catch (IOException e)
-            {
-                e.printStackTrace();
             }
+            
+        } catch (IOException e)
+        {
+            e.printStackTrace();
         }
+        this.sentence = sentence;
+        this.paragraph = paragraph;
+    }
+    
+    void playNext()
+    {
+        int paragraph = this.paragraph;
+        int sentence = this.sentence + 1;
+        try
+        {
+            player.reset();
+            if (htmlConverter.paragraphs.length < paragraph)
+            {
+                Log.e(TAG, "play: paragraph was higher than number of paragraphs");
+                return;
+            }
+            while (htmlConverter.paragraphs[paragraph].sentences.length <= sentence && !htmlConverter.paragraphs[paragraph].code)
+            {
+                if (htmlConverter.paragraphs[paragraph].code)
+                {
+                    paragraph++;
+                }else{
+                    
+                    // Log.v(TAG, String.format("in while loop paragraph: %d, sentence %d, sentence.length %d  (HtmlConverterToSpeech.java:223)", paragraph, sentence, htmlConverter.paragraphs[paragraph].sentences.length));
+                    sentence -= htmlConverter.paragraphs[paragraph].sentences.length;
+                    paragraph++;
+                    if (htmlConverter.paragraphs.length < paragraph)
+                    {
+                        Log.d(TAG, "playNext: end of page");
+                        return;
+                    }
+                }
+            }
+            if (htmlConverter.paragraphs[paragraph].sentences[sentence].speechReady)
+            {
+            
+                player.setDataSource(htmlConverter.paragraphs[paragraph].sentences[sentence].getSynthesizedSpeech().getPath());
+                player.prepare();
+                player.start();
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
+                {
+                    @Override
+                    public void onCompletion(MediaPlayer mp)
+                    {
+                        playNext();
+                    }
+                });
+            }
+        
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        this.sentence = sentence;
+        this.paragraph = paragraph;
     }
 }

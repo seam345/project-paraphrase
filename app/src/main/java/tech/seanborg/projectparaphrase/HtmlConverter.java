@@ -36,20 +36,22 @@ public class HtmlConverter
         Log.v(TAG, String.format("startdConvert (HtmlConverter.java:32)"));
         Document doc = Jsoup.parse(rawHTML);
         Element el = doc.select("div[itemprop=articleBody]").first();
-        Elements code = doc.select("div.highlight>pre");
+        // Elements code = doc.select("div.highlight>pre");
         // el.select()
-        Elements noBlockCode = el.select("p,h1,h2,h3,h4,h5,h6");
-        StringBuilder stringBuilder = new StringBuilder("");
-        paragraphs = new Paragraph[noBlockCode.size()];
-        for (int i = 0; i < noBlockCode.size(); i++)
+        // Elements noBlockCode = el.select("p,h1,h2,h3,h4,h5,h6");
+        Elements blocks = el.select("p,h1,h2,h3,h4,h5,h6,pre");
+        // StringBuilder stringBuilder = new StringBuilder("");
+        paragraphs = new Paragraph[blocks.size()];
+        for (int i = 0; i < blocks.size(); i++)
         {
-            Element e = noBlockCode.get(i);
-            Elements inlineCode = e.select("span.pre");
+            Element e = blocks.get(i);
+            paragraphs[i] = new Paragraph(e);
+            // Elements inlineCode = e.select("span.pre");
             // if (inlineCode.size() == 0)
             {
                 
-                stringBuilder.append(e.text());
-                paragraphs[i] = new Paragraph(e.text(),false);
+                // stringBuilder.append(e.text());
+                // paragraphs[i] = new Paragraph(e.text(),false);
                 
             }
            /* else
@@ -80,7 +82,7 @@ public class HtmlConverter
             }*/
         }
     
-    
+    /*
         String blah = stringBuilder.toString();
         Log.v(TAG, String.format("%s (MainActivity.java:76)", blah));
         if (MainActivity.status == TextToSpeech.SUCCESS)
@@ -91,6 +93,6 @@ public class HtmlConverter
         } else
         {
             Log.e(TAG, "onResponse: opps");
-        }
+        }*/
     }
 }
