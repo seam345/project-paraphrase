@@ -86,7 +86,47 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View v)
             {
-                htmlConverterToSpeech.playPause(getApplicationContext());
+                htmlConverterToSpeech.playPause();
+            }
+        });
+        
+        Button fastForwardButton = (Button) findViewById(R.id.buttonFastForwards);
+        fastForwardButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                htmlConverterToSpeech.playRelative(0,1);
+            }
+        });
+    
+        Button fastReverseButton = (Button) findViewById(R.id.buttonFastReverse);
+        fastReverseButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                htmlConverterToSpeech.playRelative(0,-1);
+            }
+        });
+    
+        Button paragraphForwardsButton = (Button) findViewById(R.id.buttonForwardsParagraph);
+        paragraphForwardsButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                htmlConverterToSpeech.playRelative(1, 0);
+            }
+        });
+    
+        Button paragraphReverseButton = (Button) findViewById(R.id.buttonBackParagraph);
+        paragraphReverseButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                htmlConverterToSpeech.playRelative(-1,0);
             }
         });
         

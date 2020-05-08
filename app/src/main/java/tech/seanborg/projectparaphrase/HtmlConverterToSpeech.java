@@ -137,7 +137,7 @@ public class HtmlConverterToSpeech
         player.stop();
     }
     
-    public boolean playPause(Context context)
+    public boolean playPause()
     {
         if (player.isPlaying())
         {
@@ -201,12 +201,18 @@ public class HtmlConverterToSpeech
         try
         {
             player.reset();
-            if (htmlConverter.paragraphs.length < paragraph)
+            if (paragraph > htmlConverter.paragraphs.length)
             {
-                Log.e(TAG, "playAbsolute: paragraph was higher than number of paragraphs");
+                Log.w(TAG, "playRelative: paragraph was higher than number of paragraphs");
                 return;
             }
-            while (htmlConverter.paragraphs[paragraph].sentences.length <= sentence || htmlConverter.paragraphs[paragraph].code)
+            if (paragraph < 0)
+            {
+                Log.w(TAG, "playRelative: paragraph was lower than 0");
+                return;
+            }
+            // move forwards
+            while (sentence >= htmlConverter.paragraphs[paragraph].sentences.length || htmlConverter.paragraphs[paragraph].code)
             {
                 if (htmlConverter.paragraphs[paragraph].code)
                 {
@@ -216,9 +222,26 @@ public class HtmlConverterToSpeech
                     // Log.v(TAG, String.format("in while loop paragraph: %d, sentence %d, sentence.length %d  (HtmlConverterToSpeech.java:223)", paragraph, sentence, htmlConverter.paragraphs[paragraph].sentences.length));
                     sentence -= htmlConverter.paragraphs[paragraph].sentences.length;
                     paragraph++;
-                    if (htmlConverter.paragraphs.length < paragraph)
+                    if (paragraph > htmlConverter.paragraphs.length)
                     {
                         Log.d(TAG, "playRelative: end of page");
+                        return;
+                    }
+                }
+            }
+            while (sentence < 0 || htmlConverter.paragraphs[paragraph].code)
+            {
+                if (htmlConverter.paragraphs[paragraph].code)
+                {
+                    paragraph--;
+                }else{
+            
+                    // Log.v(TAG, String.format("in while loop paragraph: %d, sentence %d, sentence.length %d  (HtmlConverterToSpeech.java:223)", paragraph, sentence, htmlConverter.paragraphs[paragraph].sentences.length));
+                    paragraph--;
+                    sentence += htmlConverter.paragraphs[paragraph].sentences.length;
+                    if (paragraph < 0)
+                    {
+                        Log.w(TAG, "playRelative: beginning of page");
                         return;
                     }
                 }
