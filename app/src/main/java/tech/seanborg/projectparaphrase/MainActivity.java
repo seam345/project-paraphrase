@@ -68,8 +68,11 @@ public class MainActivity extends AppCompatActivity
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
             {
-                // todo url needs http so I should add it if it doesn't exist
                 url = v.getText().toString();
+                if (!url.startsWith("http"))
+                {
+                    url = "https://" + url;
+                }
                 loadWebView(url, webView, null);
                 startLoadWebpage(getApplicationContext(), url, webView, htmlConverter, htmlConverterToSpeech);
                 return false;
