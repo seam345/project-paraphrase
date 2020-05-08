@@ -226,11 +226,11 @@ public class HtmlConverterToSpeech
                     // Log.v(TAG, String.format("in while loop paragraph: %d, sentence %d, sentence.length %d  (HtmlConverterToSpeech.java:223)", paragraph, sentence, htmlConverter.paragraphs[paragraph].sentences.length));
                     sentence -= htmlConverter.paragraphs[paragraph].sentences.length;
                     paragraph++;
-                    if (paragraph > htmlConverter.paragraphs.length)
-                    {
-                        Log.d(TAG, "playRelative: end of page");
-                        return;
-                    }
+                }
+                if (paragraph > htmlConverter.paragraphs.length)
+                {
+                    Log.d(TAG, "playRelative: end of page");
+                    return;
                 }
             }
             while (sentence < 0 || htmlConverter.paragraphs[paragraph].code)
@@ -238,16 +238,21 @@ public class HtmlConverterToSpeech
                 if (htmlConverter.paragraphs[paragraph].code)
                 {
                     paragraph--;
+                     if (paragraph < 0)
+                    {
+                        Log.w(TAG, "playRelative: beginning of page");
+                        return;
+                    }
                 }else{
             
                     // Log.v(TAG, String.format("in while loop paragraph: %d, sentence %d, sentence.length %d  (HtmlConverterToSpeech.java:223)", paragraph, sentence, htmlConverter.paragraphs[paragraph].sentences.length));
                     paragraph--;
-                    sentence += htmlConverter.paragraphs[paragraph].sentences.length;
                     if (paragraph < 0)
                     {
                         Log.w(TAG, "playRelative: beginning of page");
                         return;
                     }
+                    sentence += htmlConverter.paragraphs[paragraph].sentences.length;
                 }
             }
             if (htmlConverter.paragraphs[paragraph].sentences[sentence].speechReady)
