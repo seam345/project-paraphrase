@@ -1,21 +1,14 @@
 package tech.seanborg.projectparaphrase;
 
-import android.accessibilityservice.FingerprintGestureController;
 import android.content.Context;
-import android.media.MediaDataSource;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 
 import static tech.seanborg.projectparaphrase.MainActivity.TAG;
@@ -70,7 +63,7 @@ public class HtmlConverterToSpeech
             @Override
             public void onDone(String utteranceId)
             {
-                Log.v(TAG, String.format("utterence id = %s (HtmlConverterToSpeech.java:62)", utteranceId));
+                // Log.v(TAG, String.format("utterence id = %s (HtmlConverterToSpeech.java:62)", utteranceId));
                 String[] positionString = utteranceId.split("_");
                 int paragraph = Integer.parseInt(positionString[0]);
                 int sentence = Integer.parseInt(positionString[1]);
@@ -104,7 +97,7 @@ public class HtmlConverterToSpeech
             lastConvertTag = htmlConverter.currentConvertTag();
             File topDir = new File(cacheDir.getPath() + "/" + url);
             files = new ArrayList(htmlConverter.paragraphs.length);
-            Log.v(TAG, String.format("paragraphs size %d, files array initialize %d (HtmlConverterToSpeech.java:63)", htmlConverter.paragraphs.length, files.size()));
+            // Log.v(TAG, String.format("paragraphs size %d, files array initialize %d (HtmlConverterToSpeech.java:63)", htmlConverter.paragraphs.length, files.size()));
             for (int i = 0; i < htmlConverter.paragraphs.length; i++)
             {
                 ArrayList<File> tempParagraph = new ArrayList<>(htmlConverter.paragraphs[i].sentences.length);
@@ -119,7 +112,7 @@ public class HtmlConverterToSpeech
                     htmlConverter.paragraphs[i].sentences[j].setSynthesizedSpeech(sentenceFile);
                     if (!sentenceFile.exists())
                     {
-                        Log.v(TAG, String.format("File didnt exist %s (HtmlConverterToSpeech.java:71)", sentenceFile.getAbsolutePath()));
+                        // Log.v(TAG, String.format("File didnt exist %s (HtmlConverterToSpeech.java:71)", sentenceFile.getAbsolutePath()));
                         try
                         {
                             sentenceFile.createNewFile();
@@ -155,37 +148,32 @@ public class HtmlConverterToSpeech
             player.start();
         } else
         {
-            play(0, 0);
+            playAbsolute(0, 0);
         }
         
         
         return player.isPlaying();
     }
     
-    void play(int paragraph, int sentence)
+    void playAbsolute(int absoluteParagraph, int absoluteSentence)
     {
         try
         {
             player.reset();
-            if (htmlConverter.paragraphs.length < paragraph)
+            if (htmlConverter.paragraphs.length < absoluteParagraph)
             {
-                Log.e(TAG, "play: paragraph was higher than number of paragraphs");
+                Log.e(TAG, "playAbsolute: paragraph was higher than number of paragraphs");
                 return;
             }
-            while (htmlConverter.paragraphs[paragraph].sentences.length < sentence)
+            if (htmlConverter.paragraphs[absoluteParagraph].sentences.length < absoluteSentence)
             {
-                sentence -= htmlConverter.paragraphs[paragraph].sentences.length;
-                paragraph++;
-                if (htmlConverter.paragraphs.length < paragraph)
-                {
-                    Log.e(TAG, "play: sentence was higher than number of sentences then paragraph was higher than number of paragraphs");
-                    return;
-                }
+                Log.e(TAG, "playAbsolute: sentence was higher than number of sentences ");
+                return;
             }
-            if (htmlConverter.paragraphs[paragraph].sentences[sentence].speechReady)
+            if (htmlConverter.paragraphs[absoluteParagraph].sentences[absoluteSentence].speechReady)
             {
                 
-                player.setDataSource(htmlConverter.paragraphs[paragraph].sentences[sentence].getSynthesizedSpeech().getPath());
+                player.setDataSource(htmlConverter.paragraphs[absoluteParagraph].sentences[absoluteSentence].getSynthesizedSpeech().getPath());
                 player.prepare();
                 player.start();
                 player.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
@@ -193,7 +181,7 @@ public class HtmlConverterToSpeech
                     @Override
                     public void onCompletion(MediaPlayer mp)
                     {
-                        playNext();
+                        playRelative(0,1);
                     }
                 });
             }
@@ -202,23 +190,23 @@ public class HtmlConverterToSpeech
         {
             e.printStackTrace();
         }
-        this.sentence = sentence;
-        this.paragraph = paragraph;
+        this.sentence = absoluteSentence;
+        this.paragraph = absoluteParagraph;
     }
     
-    void playNext()
+    void playRelative(int relativeParagraph, int relativeSentence)
     {
-        int paragraph = this.paragraph;
-        int sentence = this.sentence + 1;
+        paragraph = this.paragraph + relativeParagraph;
+        sentence = this.sentence + relativeSentence;
         try
         {
             player.reset();
             if (htmlConverter.paragraphs.length < paragraph)
             {
-                Log.e(TAG, "play: paragraph was higher than number of paragraphs");
+                Log.e(TAG, "playAbsolute: paragraph was higher than number of paragraphs");
                 return;
             }
-            while (htmlConverter.paragraphs[paragraph].sentences.length <= sentence && !htmlConverter.paragraphs[paragraph].code)
+            while (htmlConverter.paragraphs[paragraph].sentences.length <= sentence || htmlConverter.paragraphs[paragraph].code)
             {
                 if (htmlConverter.paragraphs[paragraph].code)
                 {
@@ -230,7 +218,7 @@ public class HtmlConverterToSpeech
                     paragraph++;
                     if (htmlConverter.paragraphs.length < paragraph)
                     {
-                        Log.d(TAG, "playNext: end of page");
+                        Log.d(TAG, "playRelative: end of page");
                         return;
                     }
                 }
@@ -246,7 +234,7 @@ public class HtmlConverterToSpeech
                     @Override
                     public void onCompletion(MediaPlayer mp)
                     {
-                        playNext();
+                        playRelative(0,1);
                     }
                 });
             }
@@ -255,7 +243,5 @@ public class HtmlConverterToSpeech
         {
             e.printStackTrace();
         }
-        this.sentence = sentence;
-        this.paragraph = paragraph;
     }
 }
