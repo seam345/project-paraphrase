@@ -197,6 +197,10 @@ public class HtmlConverterToSpeech
     void playRelative(int relativeParagraph, int relativeSentence)
     {
         paragraph = this.paragraph + relativeParagraph;
+        if (relativeParagraph != 0)
+        {
+            sentence=0; // go to beginning of paragraph
+        }
         sentence = this.sentence + relativeSentence;
         try
         {
