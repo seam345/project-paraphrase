@@ -19,9 +19,11 @@ public class HtmlConverter
     Paragraph[] paragraphs = null;
     double convertTag = 0;
     
-    public double currentConvertTag(){
+    public double currentConvertTag()
+    {
         return convertTag;
     }
+    
     static String codeFilter(Element element)
     {
         String codeText = element.text();
@@ -36,24 +38,26 @@ public class HtmlConverter
         Log.v(TAG, String.format("startdConvert (HtmlConverter.java:32)"));
         Document doc = Jsoup.parse(rawHTML);
         Element el = doc.select("div[itemprop=articleBody]").first();
-        // Elements code = doc.select("div.highlight>pre");
-        // el.select()
-        // Elements noBlockCode = el.select("p,h1,h2,h3,h4,h5,h6");
-        Elements blocks = el.select("p,h1,h2,h3,h4,h5,h6,pre");
-        // StringBuilder stringBuilder = new StringBuilder("");
-        paragraphs = new Paragraph[blocks.size()];
-        for (int i = 0; i < blocks.size(); i++)
+        if (el != null)
         {
-            Element e = blocks.get(i);
-            paragraphs[i] = new Paragraph(e);
-            // Elements inlineCode = e.select("span.pre");
-            // if (inlineCode.size() == 0)
+            // Elements code = doc.select("div.highlight>pre");
+            // el.select()
+            // Elements noBlockCode = el.select("p,h1,h2,h3,h4,h5,h6");
+            Elements blocks = el.select("p,h1,h2,h3,h4,h5,h6,pre");
+            // StringBuilder stringBuilder = new StringBuilder("");
+            paragraphs = new Paragraph[blocks.size()];
+            for (int i = 0; i < blocks.size(); i++)
             {
-                
-                // stringBuilder.append(e.text());
-                // paragraphs[i] = new Paragraph(e.text(),false);
-                
-            }
+                Element e = blocks.get(i);
+                paragraphs[i] = new Paragraph(e);
+                // Elements inlineCode = e.select("span.pre");
+                // if (inlineCode.size() == 0)
+                {
+                    
+                    // stringBuilder.append(e.text());
+                    // paragraphs[i] = new Paragraph(e.text(),false);
+                    
+                }
            /* else
             {
                 List<Node> eChrildren = e.childNodes();
@@ -80,8 +84,10 @@ public class HtmlConverter
                     }
                 }
             }*/
+            }
+            
+            
         }
-    
     /*
         String blah = stringBuilder.toString();
         Log.v(TAG, String.format("%s (MainActivity.java:76)", blah));
